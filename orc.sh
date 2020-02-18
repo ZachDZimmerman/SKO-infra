@@ -4,7 +4,7 @@
 {
   CBUSER='USERNAME'#"corbolj" #Edit if you are not corbolj
   CLUSTER="skoflow" #
-  FQDN='FQSN'#"dmartin-cje.com"
+  FQDN='FQDN'#"dmartin-cje.com"
 }
 
 # Step 0 - Cluster Provisioning
@@ -46,7 +46,7 @@ sleep 60
 {
   kubectl exec jumpbox -- sh -c "apt-get update && apt-get install mysql-client -y"
   kubectl exec jumpbox -- sh -c "mysql -h flow-mysql -P${MYSQL_PORT} -u root -p${MYSQL_ROOT_PASSWORD} \
-    -Bse \"CREATE USER 'flowuser'@'localhost' IDENTIFIED BY 'password'\""
+    -Bse \"CREATE USER 'flowuser'@'%' IDENTIFIED BY 'password'\""
   kubectl exec jumpbox -- sh -c "mysql -h flow-mysql -P${MYSQL_PORT} -u root -p${MYSQL_ROOT_PASSWORD} \
     -Bse \"GRANT ALL PRIVILEGES ON * . * TO 'flowuser'@'localhost'\""
   kubectl exec jumpbox -- sh -c "mysql -h flow-mysql -P${MYSQL_PORT} -u root -p${MYSQL_ROOT_PASSWORD} \
@@ -78,6 +78,7 @@ sleep 60
   kubectl config set-context $(kubectl config current-context) --namespace=$ESNS
 }
 {
+  helm repo add stable https://kubernetes-charts.storage.googleapis.com/
   helm repo add elastic https://helm.elastic.co
   helm repo add cloudbees https://charts.cloudbees.com/public/cloudbees
   helm install elasticsearch elastic/elasticsearch \
@@ -114,9 +115,11 @@ kubectl get svc -n $ESNS
 #      --format="value(networks.ipAddresses[0])")
 
 # Change this to the correct FSADDR as needed
-FSADDR=10.89.48.58
-kubectl config set-context $(kubectl config current-context) --namespace=kube-system
-helm install nfs-cp stable/nfs-client-provisioner --set nfs.server=${FSADDR} --set nfs.path=/volumes
+{
+  FSADDR=10.89.48.58
+  kubectl config set-context $(kubectl config current-context) --namespace=kube-system
+  helm install nfs-cp stable/nfs-client-provisioner --set nfs.server=${FSADDR} --set nfs.path=/volumes
+}
 
 # Step 5: RWO storage
 
@@ -160,12 +163,12 @@ helm install cloudbees-core \
   --set OperationsCenter.HostName=$DOMAIN_NAME \
   --namespace=$CORENS
 
-  {
-    FLOWNS='flow'
-    kubectl create namespace $FLOWNS
-    kubectl label  namespace $FLOWNS name=$FLOWNS
-    kubectl config set-context $(kubectl config current-context) --namespace=$FLOWNS
-  }
+{
+  FLOWNS='flow'
+  kubectl create namespace $FLOWNS
+  kubectl label  namespace $FLOWNS name=$FLOWNS
+  kubectl config set-context $(kubectl config current-context) --namespace=$FLOWNS
+}
 
 
 # Output prereq values
