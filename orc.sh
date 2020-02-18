@@ -2,9 +2,9 @@
 
 # REQUIRED VARIABLES
 {
-  CBUSER="corbolj" #Edit if you are not corbolj
+  CBUSER='USERNAME'#"corbolj" #Edit if you are not corbolj
   CLUSTER="skoflow" #
-  FQDN="dmartin-cje.com"
+  FQDN='FQSN'#"dmartin-cje.com"
 }
 
 # Step 0 - Cluster Provisioning
@@ -62,7 +62,7 @@ sleep 60
 # MySQL Outputs
 {
   DB_Endpoint='flow-mysql.mysql.svc.cluster.local'
-  #Dbname=
+  Dbname='flowdb'
   Dbuser='flowuser'
   dbPassword='password'
 }
@@ -79,6 +79,7 @@ sleep 60
 }
 {
   helm repo add elastic https://helm.elastic.co
+  helm repo add cloudbees https://charts.cloudbees.com/public/cloudbees
   helm install elasticsearch elastic/elasticsearch \
     --namespace $ESNS
 }
@@ -159,8 +160,17 @@ helm install cloudbees-core \
   --set OperationsCenter.HostName=$DOMAIN_NAME \
   --namespace=$CORENS
 
+  {
+    FLOWNS='flow'
+    kubectl create namespace $FLOWNS
+    kubectl label  namespace $FLOWNS name=$FLOWNS
+    kubectl config set-context $(kubectl config current-context) --namespace=$FLOWNS
+  }
+
+
 # Output prereq values
 
 # Teardown steps
 
-#gcloud container clusters delete $CLUSTER-$CBUSER --region us-east1
+# gcloud container clusters delete $CLUSTER-$CBUSER --region us-east1
+# helm install cbflow cloudbees/cloudbees-flow -f flow-values.yaml --namespace flow --atomic --timeout 30m0s
