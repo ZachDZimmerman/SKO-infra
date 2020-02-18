@@ -4,7 +4,7 @@
 {
   CBUSER="corbolj" #Edit if you are not corbolj
   CLUSTER="skoflow" #
-  FQDN="PUT_YOUR_FQDN_HERE"
+  FQDN="dmartin-cje.com"
 }
 
 # Step 0 - Cluster Provisioning
@@ -55,7 +55,8 @@ sleep 60
     -Bse \"SHOW VARIABLES LIKE '%character%';SHOW VARIABLES LIKE '%collation%';\""
   echo ""
   echo "All above character sets should be set to UTF8 (except for filesystem, which should be set to binary)"
-    
+  kubectl exec jumpbox -- sh -c "mysql -h flow-mysql -P${MYSQL_PORT} -u root -p${MYSQL_ROOT_PASSWORD} \
+    -Bse \"CREATE DATABASE flowdb CHARACTER SET utf8\""
 }
 
 # MySQL Outputs
@@ -66,7 +67,7 @@ sleep 60
   dbPassword='password'
 }
 
-# Step 2: FQDN 
+# Step 2: FQDN
 # You need a FQDN, put it in the required variables in step 0
 
 # Step 3: ElasticSearch
@@ -89,12 +90,12 @@ sleep 60
 
 # ES Outputs
 # TODO: Get the ES endpoint
-echo elastic search service endpoint: 
+echo elastic search service endpoint:
 kubectl get svc -n $ESNS
 
 # Step 4: RWX storage (NFS for GKE)
 
-# A single filestore needs to exist in the project. These are project-wide. 
+# A single filestore needs to exist in the project. These are project-wide.
 # ps-dev already has one in us-central1-a
 # if the this won't work, you'll need to install the gcloud beta tools and use the following:
 
@@ -111,7 +112,7 @@ kubectl get svc -n $ESNS
 #      --zone=${ZONE} \
 #      --format="value(networks.ipAddresses[0])")
 
-# Change this to the correct FSADDR as needed 
+# Change this to the correct FSADDR as needed
 FSADDR=10.89.48.58
 kubectl config set-context $(kubectl config current-context) --namespace=kube-system
 helm install nfs-cp stable/nfs-client-provisioner --set nfs.server=${FSADDR} --set nfs.path=/volumes
@@ -127,7 +128,7 @@ helm install nfs-cp stable/nfs-client-provisioner --set nfs.server=${FSADDR} --s
 # }
 
 # Step 6: Core Modern
-
+  FQDN="dmartin-cje.com"
 DOMAIN_NAME="core.$FQDN"   # change as desired
 
 {
@@ -137,7 +138,7 @@ DOMAIN_NAME="core.$FQDN"   # change as desired
   kubectl config set-context $(kubectl config current-context) --namespace=$CORENS
 }
 
-# Manual ingress creation. YMMV here. Remove the nginx-ingress.Enabled=true from the install command if you're deploying manually. 
+# Manual ingress creation. YMMV here. Remove the nginx-ingress.Enabled=true from the install command if you're deploying manually.
 # {
 #   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx-0.23.0/deploy/mandatory.yaml
 #   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx-0.23.0/deploy/provider/cloud-generic.yaml
